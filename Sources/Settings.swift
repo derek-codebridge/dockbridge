@@ -10,9 +10,15 @@ enum Settings {
     static let accessibilitySettings = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
 
     private static let showZoomKey = "showZoomInDockMenu"
+    private static let plainRightClickKey = "plainRightClickOpensMenu"
 
     static func registerDefaults() {
-        UserDefaults.standard.register(defaults: [resetZoomOnMoveKey: true, showZoomKey: true])
+        UserDefaults.standard.register(defaults: [resetZoomOnMoveKey: true, showZoomKey: true, plainRightClickKey: true])
+    }
+
+    static var plainRightClickOpensMenu: Bool {
+        get { UserDefaults.standard.bool(forKey: plainRightClickKey) }
+        set { UserDefaults.standard.set(newValue, forKey: plainRightClickKey) }
     }
 
     static var showZoom: Bool {

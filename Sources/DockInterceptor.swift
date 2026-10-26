@@ -58,6 +58,18 @@ final class DockInterceptor {
         return true
     }
 
+    static func opensMenu(_ type: CGEventType, flags: CGEventFlags, plainRightClick: Bool) -> Bool {
+        let optionHeld = flags.contains(.maskAlternate)
+        switch type {
+        case .rightMouseDown:
+            return plainRightClick || optionHeld
+        case .leftMouseDown:
+            return flags.contains(.maskControl) && (plainRightClick || optionHeld)
+        default:
+            return false
+        }
+    }
+
     private func handle(_ type: CGEventType, _ event: CGEvent) -> Unmanaged<CGEvent>? {
         let passThrough = Unmanaged.passUnretained(event)
         switch type {
@@ -67,8 +79,10 @@ final class DockInterceptor {
             return passThrough
 
         case .rightMouseDown, .leftMouseDown:
-            if type == .leftMouseDown && !event.flags.contains(.maskControl) { return passThrough }
-            guard !isPaused, let item = DockHitTest.appItem(at: event.location) else { return passThrough }
+            guard Self.opensMenu(type, flags: event.flags, plainRightClick: Settings.plainRightClickOpensMenu),
+                  !isPaused,
+                  let item = DockHitTest.appItem(at: event.location)
+            else { return passThrough }
             pending = (type == .rightMouseDown ? .rightMouseUp : .leftMouseUp, item)
             return nil
 

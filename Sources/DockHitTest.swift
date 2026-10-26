@@ -1,5 +1,6 @@
 import AppKit
 import ApplicationServices
+import os
 
 struct DockAppItem {
     let item: AXUIElement
@@ -20,9 +21,12 @@ enum DockHitTest {
         guard insideDock else { return nil }
 
         var hit: AXUIElement?
-        guard AXUIElementCopyElementAtPosition(dockElement, Float(point.x), Float(point.y), &hit) == .success,
-              let item = hit,
-              item.string(kAXSubroleAttribute) == "AXApplicationDockItem",
+        let status = AXUIElementCopyElementAtPosition(dockElement, Float(point.x), Float(point.y), &hit)
+        guard status == .success, let item = hit else {
+            Log.tap.notice("Dock click passed to the Dock: hit-test failed with AX error \(status.rawValue)")
+            return nil
+        }
+        guard item.string(kAXSubroleAttribute) == "AXApplicationDockItem",
               item.bool("AXIsApplicationRunning") == true,
               let path = appPath(of: item)
         else { return nil }

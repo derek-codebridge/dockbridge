@@ -25,14 +25,12 @@ enum DockMenu {
         addArrangeRecent(to: menu, target: target, current: currentScreen)
         if Settings.showZoom { addZoom(to: menu, target: target) }
 
-        menu.addItem(.separator())
-        menu.addItem(ClosureMenuItem("Dock Menu…") {
-            dockItem.item.perform(kAXShowMenuAction)
-        })
         let fullScreen = window?.isFullScreen == true
         menu.addItem(ClosureMenuItem(fullScreen ? "Exit Full Screen" : "Full Screen", enabled: hasWindow) {
             WindowActions.toggleFullScreen(target)
         })
+
+        NativeDockItems.add(to: menu, dockItem: dockItem)
         return menu
     }
 

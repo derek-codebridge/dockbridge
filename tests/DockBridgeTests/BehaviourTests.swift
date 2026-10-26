@@ -57,6 +57,28 @@ struct ZoomTitleMatchingTests {
     }
 }
 
+struct ClickRuleTests {
+    @Test func plainRightClickOpensMenuByDefault() {
+        #expect(DockInterceptor.opensMenu(.rightMouseDown, flags: [], plainRightClick: true))
+    }
+
+    @Test func plainRightClickStaysNativeWhenTurnedOff() {
+        #expect(!DockInterceptor.opensMenu(.rightMouseDown, flags: [], plainRightClick: false))
+        #expect(DockInterceptor.opensMenu(.rightMouseDown, flags: .maskAlternate, plainRightClick: false))
+    }
+
+    @Test func controlClickFollowsTheSameRule() {
+        #expect(DockInterceptor.opensMenu(.leftMouseDown, flags: .maskControl, plainRightClick: true))
+        #expect(!DockInterceptor.opensMenu(.leftMouseDown, flags: .maskControl, plainRightClick: false))
+        #expect(DockInterceptor.opensMenu(.leftMouseDown, flags: [.maskControl, .maskAlternate], plainRightClick: false))
+    }
+
+    @Test func plainLeftClickNeverOpensMenu() {
+        #expect(!DockInterceptor.opensMenu(.leftMouseDown, flags: [], plainRightClick: true))
+        #expect(!DockInterceptor.opensMenu(.leftMouseDown, flags: .maskAlternate, plainRightClick: true))
+    }
+}
+
 struct DockMenuTitleTests {
     @Test func recentTitlesDescribeTheLayout() {
         #expect(DockMenu.recentTitle(2) == "2 Most Recent Side by Side")

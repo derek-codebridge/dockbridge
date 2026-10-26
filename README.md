@@ -4,7 +4,7 @@ Free from [CodeBridge](https://codebridge.com.au). Right-click (or Control-click
 
 ## Download and install
 
-1. Download the latest `DockBridge-<version>.dmg` from [Releases](../../releases/latest).
+1. Download [DockBridge.dmg](../../releases/latest/download/DockBridge.dmg) (always the latest release; past versions are on [Releases](../../releases)).
 2. Open it and drag **DockBridge** into **Applications**.
 3. Open DockBridge. The welcome window walks you through allowing it in **System Settings → Privacy & Security → Accessibility**, and offers to open it at login.
 
@@ -20,12 +20,13 @@ Right-click a running app's Dock icon:
 - **Send to Display ▸ display ▸ position**: sends the app's most recent window to any connected display at any of the positions above. Resets zoom when the display changes (can be turned off)
 - **Arrange Recent Windows ▸ display**: lays out the app's 2, 3 or 4 most recently used windows side by side or in quadrants, or all of them in a grid. Handy after reconnecting a monitor leaves windows stacked
 - **Zoom ▸**: Zoom In / Zoom Out / Reset Zoom using the app's own View menu (browsers, Slack, Notion, VS Code and other apps with those items). Can be hidden
-- **Dock Menu…**: opens the normal macOS Dock menu
 - **Full Screen**: native macOS full screen
+- **Show All Windows**, **Hide / Unhide**, **Show in Finder** and **Quit**, the same as the normal Dock menu
+- **Other Dock Options…**: opens the normal macOS Dock menu for Keep in Dock, Open at Login and the app's own items
 
-Apps that are not running, folders and the Bin keep the normal Dock menu.
+Apps that are not running, folders and the Bin keep the normal Dock menu. Prefer the normal Dock menu on right-click? Turn off **Right-Click Opens DockBridge Menu** in the menu bar icon; Option-right-click then opens DockBridge.
 
-The menu bar icon has **Reset Zoom When Moving Displays**, **Show Zoom in Dock Menu**, **Open at Login**, **About** and **Quit**.
+The menu bar icon has **Right-Click Opens DockBridge Menu**, **Reset Zoom When Moving Displays**, **Show Zoom in Dock Menu**, **Open at Login**, **About** and **Quit**.
 
 ## Privacy
 
@@ -62,7 +63,7 @@ Then bump `CFBundleShortVersionString` and `CFBundleVersion` in `Info.plist` and
 ./release.sh
 ```
 
-This builds and signs the app, wraps it in `build/DockBridge-<version>.dmg` (app + Applications shortcut), signs the DMG, notarises it, staples the ticket, checks it with Gatekeeper and prints its SHA-256. Attach the DMG to a GitHub release. `./release.sh --skip-notarize` builds the DMG without notarising.
+This builds and signs the app, wraps it in `build/DockBridge-<version>.dmg` (app + Applications shortcut), signs the DMG, notarises it, staples the ticket, checks it with Gatekeeper, copies it to `build/DockBridge.dmg` and prints both SHA-256s. Attach both files to a GitHub release; `DockBridge.dmg` keeps the `releases/latest/download/DockBridge.dmg` link stable. `./release.sh --skip-notarize` builds the DMG without notarising.
 
 ## Test helpers
 
@@ -70,7 +71,7 @@ This builds and signs the app, wraps it in `build/DockBridge-<version>.dmg` (app
 
 ```sh
 swiftc Tools/RightClick.swift -o /tmp/rightclick
-swiftc Sources/Accessibility.swift Sources/DockHitTest.swift Tools/DockPositions/main.swift -o /tmp/dockpositions
+swiftc Sources/Accessibility.swift Sources/DockHitTest.swift Sources/Log.swift Tools/DockPositions/main.swift -o /tmp/dockpositions
 /tmp/dockpositions finder     # prints each matching Dock icon's centre and the app instance it maps to
 /tmp/rightclick X Y           # right-click at those screen coordinates
 /tmp/rightclick X Y ctrl      # Control-click instead

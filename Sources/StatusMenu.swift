@@ -12,6 +12,14 @@ enum StatusMenu {
         }
 
         menu.addItem(.separator())
+        menu.addItem(toggle("Right-Click Opens DockBridge Menu", isOn: Settings.plainRightClickOpensMenu) {
+            Settings.plainRightClickOpensMenu.toggle()
+        })
+        menu.addItem(ClosureMenuItem(
+            Settings.plainRightClickOpensMenu ? "Option-Right-Click works too" : "Option-Right-Click opens DockBridge",
+            enabled: false
+        ) {})
+        menu.addItem(.separator())
         menu.addItem(toggle("Reset Zoom When Moving Displays", isOn: Settings.resetZoomOnMove) { Settings.resetZoomOnMove.toggle() })
         menu.addItem(toggle("Show Zoom in Dock Menu", isOn: Settings.showZoom) { Settings.showZoom.toggle() })
         menu.addItem(toggle("Open at Login", isOn: Settings.openAtLogin) { Settings.openAtLogin.toggle() })

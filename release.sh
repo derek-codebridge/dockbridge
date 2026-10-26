@@ -32,4 +32,5 @@ fi
 xcrun notarytool submit "$DMG" --keychain-profile "$NOTARY_PROFILE" --wait
 xcrun stapler staple "$DMG"
 spctl --assess --type open --context context:primary-signature --verbose "$DMG"
-shasum -a 256 "$DMG"
+cp "$DMG" build/DockBridge.dmg
+shasum -a 256 "$DMG" build/DockBridge.dmg
