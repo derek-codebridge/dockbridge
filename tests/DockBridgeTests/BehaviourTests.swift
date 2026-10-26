@@ -79,6 +79,18 @@ struct ClickRuleTests {
     }
 }
 
+struct NativeQuitItemTests {
+    @Test func forceQuitIsTheOptionAlternateOfQuit() {
+        let items = NativeDockItems.quitItems(for: .current)
+        #expect(items.map(\.title) == ["Quit", "Force Quit"])
+        #expect(items[0].keyEquivalentModifierMask.isEmpty)
+        #expect(!items[0].isAlternate)
+        #expect(items[1].keyEquivalentModifierMask == .option)
+        #expect(items[1].isAlternate)
+        #expect(items[0].keyEquivalent == items[1].keyEquivalent)
+    }
+}
+
 struct DockMenuTitleTests {
     @Test func recentTitlesDescribeTheLayout() {
         #expect(DockMenu.recentTitle(2) == "2 Most Recent Side by Side")
