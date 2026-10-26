@@ -1,0 +1,8 @@
+.build/
+build/
+.swiftpm/
+.oby/
+.DS_Store
+*.dmg
+.claude/
+release.local.env
