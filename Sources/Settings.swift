@@ -44,7 +44,7 @@ enum Settings {
             do {
                 try newValue ? service.register() : service.unregister()
             } catch {
-                Log.app.error("Open at Login change failed: \(error.localizedDescription, privacy: .public)")
+                Log.app.error("Open at Login change failed: \(error.localizedDescription)")
             }
             if service.status == .requiresApproval {
                 SMAppService.openSystemSettingsLoginItems()

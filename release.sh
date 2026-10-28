@@ -2,6 +2,10 @@
 set -euo pipefail
 cd "${0:A:h}"
 
+if git ls-files --error-unmatch release.local.env >/dev/null 2>&1; then
+  echo "release.local.env is tracked by git; untrack it before building." >&2
+  exit 1
+fi
 [[ -f release.local.env ]] && source release.local.env
 
 if [[ -z "${DOCKBRIDGE_SIGN_IDENTITY:-}" || "$DOCKBRIDGE_SIGN_IDENTITY" == "-" ]]; then
@@ -16,6 +20,15 @@ DMG="build/DockBridge-$VERSION.dmg"
 STAGE=build/dmg
 
 ./build.sh
+
+if [[ "${1:-}" != "--skip-notarize" ]]; then
+  APP_ZIP=build/DockBridge-app.zip
+  rm -f "$APP_ZIP"
+  ditto -c -k --keepParent build/DockBridge.app "$APP_ZIP"
+  xcrun notarytool submit "$APP_ZIP" --keychain-profile "$NOTARY_PROFILE" --wait
+  xcrun stapler staple build/DockBridge.app
+  rm -f "$APP_ZIP"
+fi
 
 rm -rf "$STAGE" "$DMG"
 mkdir -p "$STAGE"

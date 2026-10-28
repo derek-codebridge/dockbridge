@@ -7,7 +7,8 @@ final class DockInterceptor {
     private let onClick: (DockAppItem, CGPoint) -> Void
     private var tap: CFMachPort?
     private var tapThread: Thread?
-    private var pending: (upType: CGEventType, item: DockAppItem)?
+    private var pending: (upType: CGEventType, item: DockAppItem, location: CGPoint)?
+    static let maxClickTravel: CGFloat = 40
 
     init(onClick: @escaping (DockAppItem, CGPoint) -> Void) {
         self.onClick = onClick
@@ -70,11 +71,16 @@ final class DockInterceptor {
         }
     }
 
+    static func isSameClick(down: CGPoint, up: CGPoint) -> Bool {
+        hypot(up.x - down.x, up.y - down.y) <= maxClickTravel
+    }
+
     private func handle(_ type: CGEventType, _ event: CGEvent) -> Unmanaged<CGEvent>? {
         let passThrough = Unmanaged.passUnretained(event)
         switch type {
         case .tapDisabledByTimeout, .tapDisabledByUserInput:
             Log.tap.notice("Event tap disabled by system (type \(type.rawValue)); re-enabling if still trusted")
+            pending = nil
             if let tap, AXIsProcessTrusted() { CGEvent.tapEnable(tap: tap, enable: true) }
             return passThrough
 
@@ -83,13 +89,15 @@ final class DockInterceptor {
                   !isPaused,
                   let item = DockHitTest.appItem(at: event.location)
             else { return passThrough }
-            pending = (type == .rightMouseDown ? .rightMouseUp : .leftMouseUp, item)
+            pending = (type == .rightMouseDown ? .rightMouseUp : .leftMouseUp, item, event.location)
             return nil
 
         case .rightMouseUp, .leftMouseUp:
             guard let pending, pending.upType == type else { return passThrough }
             self.pending = nil
             let location = event.location
+            guard Self.isSameClick(down: pending.location, up: location) else { return passThrough }
+            isPaused = true
             DispatchQueue.main.async { self.onClick(pending.item, location) }
             return nil
 

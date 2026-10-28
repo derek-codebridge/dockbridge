@@ -24,11 +24,15 @@ enum AppLocation {
         let destination = URL(fileURLWithPath: "/Applications").appendingPathComponent(bundle.lastPathComponent)
         do {
             if FileManager.default.fileExists(atPath: destination.path) {
+                guard Bundle(url: destination)?.bundleIdentifier == Bundle.main.bundleIdentifier else {
+                    throw CocoaError(.fileWriteFileExists, userInfo: [NSFilePathErrorKey: destination.path])
+                }
                 try FileManager.default.trashItem(at: destination, resultingItemURL: nil)
             }
             try FileManager.default.copyItem(at: bundle, to: destination)
+            removeQuarantine(under: destination)
         } catch {
-            Log.app.error("Move to Applications failed: \(error.localizedDescription, privacy: .public)")
+            Log.app.error("Move to Applications failed: \(error.localizedDescription)")
             let failure = NSAlert(error: error)
             failure.informativeText = "Drag DockBridge from the disk image into your Applications folder instead."
             failure.runModal()
@@ -39,10 +43,19 @@ enum AppLocation {
         configuration.createsNewApplicationInstance = true
         NSWorkspace.shared.openApplication(at: destination, configuration: configuration) { _, error in
             if let error {
-                Log.app.error("Relaunch from Applications failed: \(error.localizedDescription, privacy: .public)")
+                Log.app.error("Relaunch from Applications failed: \(error.localizedDescription)")
                 return
             }
             DispatchQueue.main.async { NSApp.terminate(nil) }
+        }
+    }
+
+    static func removeQuarantine(under root: URL) {
+        let attribute = "com.apple.quarantine"
+        removexattr(root.path, attribute, XATTR_NOFOLLOW)
+        let files = FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)
+        while let url = files?.nextObject() as? URL {
+            removexattr(url.path, attribute, XATTR_NOFOLLOW)
         }
     }
 }

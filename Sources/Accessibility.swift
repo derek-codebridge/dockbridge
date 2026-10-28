@@ -2,6 +2,15 @@ import AppKit
 import ApplicationServices
 
 extension AXUIElement {
+    static func setGlobalTimeout(_ seconds: Float) {
+        AXUIElementSetMessagingTimeout(AXUIElementCreateSystemWide(), seconds)
+    }
+
+    static func pid(of element: AXUIElement) -> pid_t? {
+        var pid: pid_t = 0
+        return AXUIElementGetPid(element, &pid) == .success ? pid : nil
+    }
+
     func value(_ attribute: String) -> CFTypeRef? {
         var result: CFTypeRef?
         guard AXUIElementCopyAttributeValue(self, attribute as CFString, &result) == .success else { return nil }

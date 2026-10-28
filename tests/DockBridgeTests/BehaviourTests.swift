@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Testing
 @testable import DockBridgeCore
@@ -88,6 +89,104 @@ struct NativeQuitItemTests {
         #expect(items[1].keyEquivalentModifierMask == .option)
         #expect(items[1].isAlternate)
         #expect(items[0].keyEquivalent == items[1].keyEquivalent)
+    }
+}
+
+struct DockMenuLayoutTests {
+    @Test func normalItemsComeFirstThenDockBridgeThenQuit() {
+        let item = DockAppItem(item: AXUIElementCreateApplication(getpid()), app: .current)
+        let menu = DockMenu.make(for: item)
+        let titles = menu.items.filter { !$0.isSeparatorItem }.map(\.title)
+        let body = Array(titles.dropFirst())
+        #expect(body.first == "Show All Windows")
+        #expect(body.contains("Other Dock Options…"))
+        let other = body.firstIndex(of: "Other Dock Options…") ?? 0
+        #expect(Array(body[(other + 1)...]) == ["Windowed Full Screen", "DockBridge", "Quit", "Force Quit"])
+
+        let bridge = menu.items.first { $0.title == "DockBridge" }?.submenu
+        let bridgeTitles = bridge?.items.filter { !$0.isSeparatorItem }.map(\.title) ?? []
+        #expect(bridgeTitles.first == "Fit Windows on Screen")
+        #expect(["Resize", "Send to Display", "Arrange Recent Windows"].allSatisfy(bridgeTitles.contains))
+        #expect(bridgeTitles.last == "Full Screen")
+    }
+}
+
+struct DockEdgeTests {
+    let laptop = CGRect(x: 0, y: 0, width: 1728, height: 1117)
+    let monitor = CGRect(x: 1728, y: -600, width: 3840, height: 2160)
+
+    @Test func bottomLeftAndRightEdgesCount() {
+        #expect(DockHitTest.isNearDockEdge(CGPoint(x: 517, y: 1095), displays: [laptop, monitor]))
+        #expect(DockHitTest.isNearDockEdge(CGPoint(x: 3600, y: 1540), displays: [laptop, monitor]))
+        #expect(DockHitTest.isNearDockEdge(CGPoint(x: 20, y: 500), displays: [laptop]))
+        #expect(DockHitTest.isNearDockEdge(CGPoint(x: 5550, y: 300), displays: [laptop, monitor]))
+    }
+
+    @Test func clicksAwayFromTheDockSkipAccessibilityCalls() {
+        #expect(!DockHitTest.isNearDockEdge(CGPoint(x: 860, y: 500), displays: [laptop, monitor]))
+        #expect(!DockHitTest.isNearDockEdge(CGPoint(x: 3600, y: 1100), displays: [laptop, monitor]))
+        #expect(!DockHitTest.isNearDockEdge(CGPoint(x: 860, y: 12), displays: [laptop]))
+        #expect(!DockHitTest.isNearDockEdge(CGPoint(x: 517, y: 1095), displays: []))
+    }
+
+    @Test func liveDisplayListIsAvailable() {
+        #expect(!DockHitTest.activeDisplayBounds().isEmpty)
+    }
+}
+
+struct DockProbePointTests {
+    let laptop = CGRect(x: 0, y: 0, width: 1728, height: 1117)
+    let bottomList = CGRect(x: 9, y: 1074, width: 1710, height: 33)
+
+    @Test func clicksBelowTheReportedDockStripStillHitTheIcon() {
+        for y in [1080.0, 1106, 1107, 1110, 1116] {
+            #expect(DockHitTest.probePoint(for: CGPoint(x: 517, y: y), list: bottomList, display: laptop) == CGPoint(x: 517, y: bottomList.midY))
+        }
+    }
+
+    @Test func clicksAboveOrBesideTheDockAreIgnored() {
+        #expect(DockHitTest.probePoint(for: CGPoint(x: 517, y: 1060), list: bottomList, display: laptop) == nil)
+        #expect(DockHitTest.probePoint(for: CGPoint(x: 4, y: 1100), list: bottomList, display: laptop) == nil)
+        #expect(DockHitTest.probePoint(for: CGPoint(x: 1722, y: 1100), list: bottomList, display: laptop) == nil)
+    }
+
+    @Test func sideDocksReachTheirScreenEdge() {
+        let leftList = CGRect(x: 6, y: 200, width: 40, height: 700)
+        #expect(DockHitTest.probePoint(for: CGPoint(x: 0, y: 500), list: leftList, display: laptop) == CGPoint(x: leftList.midX, y: 500))
+        #expect(DockHitTest.probePoint(for: CGPoint(x: 60, y: 500), list: leftList, display: laptop) == nil)
+        let rightList = CGRect(x: 1682, y: 200, width: 40, height: 700)
+        #expect(DockHitTest.probePoint(for: CGPoint(x: 1727, y: 500), list: rightList, display: laptop) == CGPoint(x: rightList.midX, y: 500))
+    }
+}
+
+struct ClickMatchingTests {
+    @Test func releaseNearThePressIsTheSameClick() {
+        #expect(DockInterceptor.isSameClick(down: CGPoint(x: 517, y: 1095), up: CGPoint(x: 519, y: 1097)))
+    }
+
+    @Test func releaseFarFromThePressIsNotMatched() {
+        #expect(!DockInterceptor.isSameClick(down: CGPoint(x: 517, y: 1095), up: CGPoint(x: 900, y: 400)))
+    }
+}
+
+struct QuarantineTests {
+    @Test func movedCopyLosesQuarantineEverywhere() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("DockBridgeQuarantine-\(UUID().uuidString).app")
+        let inner = root.appendingPathComponent("Contents/MacOS")
+        try FileManager.default.createDirectory(at: inner, withIntermediateDirectories: true)
+        let binary = inner.appendingPathComponent("DockBridge")
+        try Data("x".utf8).write(to: binary)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let value = "0083;00000000;Safari;"
+        for url in [root, binary] {
+            #expect(setxattr(url.path, "com.apple.quarantine", value, value.utf8.count, 0, XATTR_NOFOLLOW) == 0)
+        }
+
+        AppLocation.removeQuarantine(under: root)
+
+        for url in [root, binary] {
+            #expect(getxattr(url.path, "com.apple.quarantine", nil, 0, 0, XATTR_NOFOLLOW) == -1)
+        }
     }
 }
 

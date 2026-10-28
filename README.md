@@ -12,19 +12,21 @@ Requires macOS 14 Sonoma or later, on Apple silicon or Intel. The download is si
 
 ## What the Dock menu does
 
-Right-click a running app's Dock icon:
+Right-click a running app's Dock icon (anywhere in its column, down to the screen edge):
 
+- **Show All Windows**, **Hide / Unhide** and **Show in Finder**, the same as the normal Dock menu
+- **Other Dock Options…**: opens the normal macOS Dock menu for Keep in Dock, Open at Login, the window list and the app's own items
 - **Windowed Full Screen**: fills the screen and keeps the window (no separate Space)
-- **Fit Windows on Screen**: shrinks and moves every window of the app, including previews such as Quick Look, back inside the visible screen, keeping their proportions
-- **Resize ▸**: Left / Right / Top / Bottom 50%, Top Left / Top Right / Bottom Left / Bottom Right Quarter, Center, Grid All Windows
-- **Send to Display ▸ display ▸ position**: sends the app's most recent window to any connected display at any of the positions above. Resets zoom when the display changes (can be turned off)
-- **Arrange Recent Windows ▸ display**: lays out the app's 2, 3 or 4 most recently used windows side by side or in quadrants, or all of them in a grid. Handy after reconnecting a monitor leaves windows stacked
-- **Zoom ▸**: Zoom In / Zoom Out / Reset Zoom using the app's own View menu (browsers, Slack, Notion, VS Code and other apps with those items). Can be hidden
-- **Full Screen**: native macOS full screen
-- **Show All Windows**, **Hide / Unhide**, **Show in Finder** and **Quit**, the same as the normal Dock menu
-- **Other Dock Options…**: opens the normal macOS Dock menu for Keep in Dock, Open at Login and the app's own items
+- **DockBridge ▸**, which holds the other actions:
+  - **Fit Windows on Screen**: shrinks and moves every window of the app, including previews such as Quick Look, back inside the visible screen, keeping their proportions
+  - **Resize ▸**: Left / Right / Top / Bottom 50%, Top Left / Top Right / Bottom Left / Bottom Right Quarter, Center, Grid All Windows
+  - **Send to Display ▸ display ▸ position**: sends the app's most recent window to any connected display at any of the positions above. Resets zoom when the display changes (can be turned off)
+  - **Arrange Recent Windows ▸ display**: lays out the app's 2, 3 or 4 most recently used windows side by side or in quadrants, or all of them in a grid. Handy after reconnecting a monitor leaves windows stacked
+  - **Zoom ▸**: Zoom In / Zoom Out / Reset Zoom using the app's own View menu (browsers, Slack, Notion, VS Code and other apps with those items). Can be hidden
+  - **Full Screen**: native macOS full screen
+- **Quit** (hold Option for Force Quit)
 
-Apps that are not running, folders and the Bin keep the normal Dock menu. Prefer the normal Dock menu on right-click? Turn off **Right-Click Opens DockBridge Menu** in the menu bar icon; Option-right-click then opens DockBridge.
+The menu works with the keyboard: arrow keys to move, Return to choose, Escape to close. Apps that are not running, folders and the Bin keep the normal Dock menu. Prefer the normal Dock menu on right-click? Turn off **Right-Click Opens DockBridge Menu** in the menu bar icon; Option-right-click then opens DockBridge.
 
 The menu bar icon has **Right-Click Opens DockBridge Menu**, **Reset Zoom When Moving Displays**, **Show Zoom in Dock Menu**, **Open at Login**, **About** and **Quit**.
 
@@ -63,7 +65,7 @@ Then bump `CFBundleShortVersionString` and `CFBundleVersion` in `Info.plist` and
 ./release.sh
 ```
 
-This builds and signs the app, wraps it in `build/DockBridge-<version>.dmg` (app + Applications shortcut), signs the DMG, notarises it, staples the ticket, checks it with Gatekeeper, copies it to `build/DockBridge.dmg` and prints both SHA-256s. Attach both files to a GitHub release; `DockBridge.dmg` keeps the `releases/latest/download/DockBridge.dmg` link stable. `./release.sh --skip-notarize` builds the DMG without notarising.
+This builds and signs the app, notarises and staples it, wraps it in `build/DockBridge-<version>.dmg` (app + Applications shortcut), signs the DMG, notarises it, staples the ticket, checks it with Gatekeeper, copies it to `build/DockBridge.dmg` and prints both SHA-256s. Attach both files to a GitHub release; `DockBridge.dmg` keeps the `releases/latest/download/DockBridge.dmg` link stable. `./release.sh --skip-notarize` builds the DMG without notarising.
 
 ## Test helpers
 

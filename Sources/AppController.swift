@@ -10,6 +10,7 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         Settings.registerDefaults()
+        AXUIElement.setGlobalTimeout(1.5)
         waitForOtherInstances(checksLeft: 12) { [weak self] in self?.launch() }
     }
 
@@ -84,9 +85,18 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func showDockMenu(for dockItem: DockAppItem, at location: CGPoint) {
+        let started = Date()
         let menu = DockMenu.make(for: dockItem)
-        interceptor.isPaused = true
-        menu.popUp(positioning: nil, at: Screens.cocoaPoint(fromAX: location), in: nil)
+        let built = Date()
+        let previous = NSWorkspace.shared.frontmostApplication
+        NSApp.activate()
+        let chose = menu.popUp(positioning: nil, at: Screens.cocoaPoint(fromAX: location), in: nil)
         interceptor.isPaused = false
+        if !chose, let previous, previous.processIdentifier != getpid(), !previous.isTerminated, !previous.isHidden {
+            previous.activate()
+        } else {
+            DispatchQueue.main.async { if NSApp.isActive { NSApp.deactivate() } }
+        }
+        Log.app.debug("Dock menu built in \(built.timeIntervalSince(started))s, open for \(Date().timeIntervalSince(built))s")
     }
 }

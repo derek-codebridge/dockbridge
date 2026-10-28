@@ -2,6 +2,10 @@
 set -euo pipefail
 cd "${0:A:h}"
 
+if git ls-files --error-unmatch release.local.env >/dev/null 2>&1; then
+  echo "release.local.env is tracked by git; untrack it before building." >&2
+  exit 1
+fi
 [[ -f release.local.env ]] && source release.local.env
 
 APP=build/DockBridge.app

@@ -5,32 +5,37 @@ enum DockMenu {
 
     static func make(for dockItem: DockAppItem) -> NSMenu {
         let target = TargetApp(dockItem.app)
-        let window = target.primaryWindow
+        let windows = target.windows
+        let window = target.primaryWindow(among: windows)
         let hasWindow = window != nil
+        let visibleCount = windows.filter { !$0.isMinimized }.count
         let currentScreen = Screens.screen(for: window?.frame)
 
         let menu = NSMenu()
         menu.autoenablesItems = false
         menu.addItem(ClosureMenuItem(dockItem.app.localizedName ?? "App", enabled: false) {})
+        NativeDockItems.addWindowItems(to: menu, dockItem: dockItem)
         menu.addItem(.separator())
         menu.addItem(ClosureMenuItem(Layout.fill.title, enabled: hasWindow) {
             WindowActions.apply(.fill, to: target)
         })
-        menu.addItem(ClosureMenuItem("Fit Windows on Screen", enabled: !target.everyVisibleWindow.isEmpty) {
+
+        let bridge = menu.addSubmenu("DockBridge")
+        bridge.addItem(ClosureMenuItem("Fit Windows on Screen", enabled: !target.everyVisibleWindow.isEmpty) {
             WindowActions.fitOnScreen(target)
         })
-
-        addResize(to: menu, target: target, enabled: hasWindow)
-        addSendToDisplay(to: menu, target: target, current: currentScreen, enabled: hasWindow)
-        addArrangeRecent(to: menu, target: target, current: currentScreen)
-        if Settings.showZoom { addZoom(to: menu, target: target) }
+        addResize(to: bridge, target: target, windowCount: windows.count, enabled: hasWindow)
+        addSendToDisplay(to: bridge, target: target, current: currentScreen, enabled: hasWindow)
+        addArrangeRecent(to: bridge, target: target, recentCount: visibleCount, current: currentScreen)
+        if Settings.showZoom { addZoom(to: bridge, target: target) }
 
         let fullScreen = window?.isFullScreen == true
-        menu.addItem(ClosureMenuItem(fullScreen ? "Exit Full Screen" : "Full Screen", enabled: hasWindow) {
+        bridge.addItem(ClosureMenuItem(fullScreen ? "Exit Full Screen" : "Full Screen", enabled: hasWindow) {
             WindowActions.toggleFullScreen(target)
         })
 
-        NativeDockItems.add(to: menu, dockItem: dockItem)
+        menu.addItem(.separator())
+        for item in NativeDockItems.quitItems(for: dockItem.app) { menu.addItem(item) }
         return menu
     }
 
@@ -46,8 +51,7 @@ enum DockMenu {
         isCurrent ? "\(name) (current)" : name
     }
 
-    private static func addResize(to menu: NSMenu, target: TargetApp, enabled: Bool) {
-        let windowCount = target.windows.count
+    private static func addResize(to menu: NSMenu, target: TargetApp, windowCount: Int, enabled: Bool) {
         let resize = menu.addSubmenu("Resize", enabled: enabled)
         addLayouts(Layout.resizeGroups, to: resize) { WindowActions.apply($0, to: target) }
         resize.addItem(.separator())
@@ -64,8 +68,7 @@ enum DockMenu {
         }
     }
 
-    private static func addArrangeRecent(to menu: NSMenu, target: TargetApp, current: NSScreen) {
-        let recentCount = target.visibleWindows.count
+    private static func addArrangeRecent(to menu: NSMenu, target: TargetApp, recentCount: Int, current: NSScreen) {
         let arrange = menu.addSubmenu("Arrange Recent Windows", enabled: recentCount >= 2)
         for screen in NSScreen.screens {
             let options = arrange.addSubmenu(displayTitle(screen.localizedName, isCurrent: screen == current))

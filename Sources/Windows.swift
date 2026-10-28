@@ -61,12 +61,16 @@ struct TargetApp {
     }
 
     var primaryWindow: Window? {
+        primaryWindow(among: windows)
+    }
+
+    func primaryWindow(among windows: [Window]) -> Window? {
         for attribute in [kAXFocusedWindowAttribute, kAXMainWindowAttribute] {
             if let candidate = element.element(attribute).map(Window.init), candidate.isStandard, !candidate.isMinimized {
                 return candidate
             }
         }
-        return visibleWindows.first ?? windows.first
+        return windows.first { !$0.isMinimized } ?? windows.first
     }
 
     func bringForward(_ window: Window) {
