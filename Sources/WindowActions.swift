@@ -6,9 +6,7 @@ enum WindowActions {
         target.bringForward(window)
         afterLeavingFullScreen(window) {
             let area = Screens.usableArea(for: window.frame)
-            target.withEnhancedInterfaceDisabled {
-                window.setFrame(layout.frame(current: window.frame ?? area, in: area))
-            }
+            place([(window, layout.frame(current: window.frame ?? area, in: area))], in: target)
         }
     }
 
@@ -18,9 +16,7 @@ enum WindowActions {
         target.bringForward(window)
         afterLeavingFullScreen(window) {
             let area = Screens.usableArea(of: screen)
-            target.withEnhancedInterfaceDisabled {
-                window.setFrame(layout.frame(current: window.frame ?? area, in: area))
-            }
+            place([(window, layout.frame(current: window.frame ?? area, in: area))], in: target)
             guard changesDisplay, Settings.resetZoomOnMove else { return }
             whenActive(target) { ZoomAction.reset.perform(in: target.element) }
         }
@@ -32,11 +28,7 @@ enum WindowActions {
         guard let mostRecent = chosen.first else { return }
         target.bringForward(mostRecent)
         let area = Screens.usableArea(of: screen)
-        target.withEnhancedInterfaceDisabled {
-            for (window, frame) in zip(chosen, Grid.frames(count: chosen.count, in: area)) {
-                window.setFrame(frame)
-            }
-        }
+        place(Array(zip(chosen, Grid.frames(count: chosen.count, in: area))), in: target)
         chosen.reversed().forEach { $0.raise() }
     }
 
@@ -53,24 +45,25 @@ enum WindowActions {
         windows.filter(\.isMinimized).forEach { $0.unminimize() }
         target.bringForward(anchor)
         let area = Screens.usableArea(for: anchor.frame)
-        target.withEnhancedInterfaceDisabled {
-            for (window, frame) in zip(windows, Grid.frames(count: windows.count, in: area)) {
-                window.setFrame(frame)
-            }
-        }
+        place(Array(zip(windows, Grid.frames(count: windows.count, in: area))), in: target)
     }
 
     static func fitOnScreen(_ target: TargetApp) {
         let windows = target.everyVisibleWindow
         guard let first = windows.first else { return }
         target.bringForward(first)
+        let placements = windows.compactMap { window -> (Window, CGRect)? in
+            guard let frame = window.frame else { return nil }
+            let fitted = Fit.frame(frame, in: Screens.usableArea(for: frame))
+            return Window.framesMatch(frame, fitted) ? nil : (window, fitted)
+        }
+        place(placements, in: target)
+    }
+
+    private static func place(_ placements: [(Window, CGRect)], in target: TargetApp) {
+        guard !placements.isEmpty else { return }
         target.withEnhancedInterfaceDisabled {
-            for window in windows {
-                guard let frame = window.frame else { continue }
-                let area = Screens.usableArea(for: frame)
-                let fitted = Fit.frame(frame, in: area)
-                if fitted != frame { window.setFrame(fitted) }
-            }
+            for (window, frame) in placements { window.setFrame(frame) }
         }
     }
 

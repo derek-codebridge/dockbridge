@@ -159,6 +159,34 @@ struct DockProbePointTests {
     }
 }
 
+struct DockGapTests {
+    let laptop = CGRect(x: 0, y: 0, width: 1728, height: 1117)
+
+    @Test func bottomDockLeavesTheOnePointGapMacOSKeeps() {
+        let visible = CGRect(x: 0, y: 39, width: 1728, height: 1044)
+        let area = Screens.axRect(fromCocoa: Screens.clearOfDock(visible: visible, full: laptop), primaryHeight: 1117)
+        #expect(area == CGRect(x: 0, y: 34, width: 1728, height: 1043))
+        #expect(area.maxY == 1077)
+    }
+
+    @Test func sideDocksLeaveTheGapOnTheirSide() {
+        #expect(Screens.clearOfDock(visible: CGRect(x: 70, y: 0, width: 1658, height: 1083), full: laptop) == CGRect(x: 71, y: 0, width: 1657, height: 1083))
+        #expect(Screens.clearOfDock(visible: CGRect(x: 0, y: 0, width: 1658, height: 1083), full: laptop) == CGRect(x: 0, y: 0, width: 1657, height: 1083))
+    }
+
+    @Test func screensWithoutTheDockAreUnchanged() {
+        let monitor = CGRect(x: 1728, y: -443, width: 3840, height: 2160)
+        #expect(Screens.clearOfDock(visible: monitor, full: monitor) == monitor)
+    }
+
+    @Test func fittedOffscreenWindowStopsAboveTheDock() {
+        let area = CGRect(x: 0, y: 34, width: 1728, height: 1043)
+        let fitted = Fit.frame(CGRect(x: 100, y: 300, width: 2000, height: 1043), in: area)
+        #expect(fitted == CGRect(x: 0, y: 176, width: 1728, height: 901))
+        #expect(fitted.maxY == 1077)
+    }
+}
+
 struct ClickMatchingTests {
     @Test func releaseNearThePressIsTheSameClick() {
         #expect(DockInterceptor.isSameClick(down: CGPoint(x: 517, y: 1095), up: CGPoint(x: 519, y: 1097)))

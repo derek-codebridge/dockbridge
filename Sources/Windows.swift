@@ -28,6 +28,11 @@ struct Window {
         element.set(kAXSizeAttribute, sizeValue)
     }
 
+    static func framesMatch(_ actual: CGRect, _ wanted: CGRect, tolerance: CGFloat = 2) -> Bool {
+        abs(actual.minX - wanted.minX) <= tolerance && abs(actual.minY - wanted.minY) <= tolerance
+            && abs(actual.width - wanted.width) <= tolerance && abs(actual.height - wanted.height) <= tolerance
+    }
+
     func unminimize() {
         element.set(kAXMinimizedAttribute, kCFBooleanFalse)
     }
@@ -112,7 +117,15 @@ enum Screens {
     }
 
     static func usableArea(of screen: NSScreen) -> CGRect {
-        axRect(fromCocoa: screen.visibleFrame)
+        axRect(fromCocoa: clearOfDock(visible: screen.visibleFrame, full: screen.frame))
+    }
+
+    static func clearOfDock(visible: CGRect, full: CGRect) -> CGRect {
+        var area = visible
+        if area.minY > full.minY { area.origin.y += 1; area.size.height -= 1 }
+        if area.minX > full.minX { area.origin.x += 1; area.size.width -= 1 }
+        if area.maxX < full.maxX { area.size.width -= 1 }
+        return area
     }
 
     static func usableArea(for windowFrame: CGRect?) -> CGRect {
